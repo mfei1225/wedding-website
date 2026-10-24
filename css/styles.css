@@ -5,15 +5,15 @@
   --blush: #f6ebe6;
   --ink: #1c1612;
   --ink-soft: #5c5148;
-  --lacquer: #5c4636;
-  --lacquer-deep: #3d2e22;
-  --lacquer-mid: #4a382c;
-  --cinnabar: #6b5344;
+  --lacquer: #8a2a32;
+  --lacquer-deep: #5c1520;
+  --lacquer-mid: #6e1e28;
+  --cinnabar: #a33b42;
   --gold-ink: #6b4e1e;
   --gold-line: #b8923a;
   --gold-pale: #f0e2c4;
   --line: rgba(184, 146, 58, 0.45);
-  --shadow: 0 24px 60px rgba(61, 46, 34, 0.12);
+  --shadow: 0 24px 60px rgba(92, 21, 32, 0.12);
   --serif: "Cormorant Garamond", Georgia, serif;
   --song: "Cormorant Garamond", Georgia, serif;
   --sans: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
@@ -257,11 +257,11 @@ ol {
 
 .btn-line-dark {
   color: var(--lacquer);
-  border-color: rgba(92, 70, 54, 0.35);
+  border-color: rgba(138, 42, 50, 0.35);
 }
 
 .btn-line-dark:hover {
-  background: rgba(92, 70, 54, 0.06);
+  background: rgba(138, 42, 50, 0.06);
 }
 
 .btn-block {
@@ -284,7 +284,7 @@ ol {
   display: inline-flex;
   margin-top: 0.85rem;
   padding-bottom: 0.12rem;
-  border-bottom: 1px solid rgba(92, 70, 54, 0.35);
+  border-bottom: 1px solid rgba(138, 42, 50, 0.35);
   color: var(--lacquer);
   font-size: 0.72rem;
   letter-spacing: 0.14em;
@@ -1056,8 +1056,8 @@ ol {
   position: relative;
   background-color: #e6dccb;
   background-image:
-    linear-gradient(rgba(92, 70, 54, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(92, 70, 54, 0.1) 1px, transparent 1px);
+    linear-gradient(rgba(138, 42, 50, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(138, 42, 50, 0.1) 1px, transparent 1px);
   background-size: 26px 26px;
 }
 
@@ -1071,7 +1071,7 @@ ol {
   border-radius: 50%;
   background: var(--lacquer);
   transform: translate(-50%, -50%);
-  box-shadow: 0 0 0 8px rgba(92, 70, 54, 0.12);
+  box-shadow: 0 0 0 8px rgba(138, 42, 50, 0.12);
 }
 
 .venue-copy,
@@ -1227,10 +1227,10 @@ ol {
   background: linear-gradient(transparent 45%, rgba(26, 18, 16, 0.72));
 }
 
-.tone-lacquer { background: linear-gradient(160deg, #6b5344, #3d2e22); }
+.tone-lacquer { background: linear-gradient(160deg, #8a2a32, #4a1218); }
 .tone-silk { background: linear-gradient(160deg, #f7f1ea, #e4d3c4); color: var(--ink); }
 .tone-gold { background: linear-gradient(165deg, #f3e6c8, #c6a35a); color: var(--ink); }
-.tone-peony { background: linear-gradient(165deg, #c4a48a, #6b5344); }
+.tone-peony { background: linear-gradient(165deg, #c45c55, #6e1e28); }
 .tone-jade { background: linear-gradient(165deg, #3e6d60, #1e463e); }
 .tone-ink { background: linear-gradient(165deg, #3a2c28, #241816); }
 
@@ -1285,7 +1285,7 @@ ol {
 .section-rsvp {
   background:
     radial-gradient(ellipse at 12% 0%, rgba(184, 146, 58, 0.22), transparent 46%),
-    linear-gradient(180deg, var(--lacquer-mid), #2c2118);
+    linear-gradient(180deg, var(--lacquer-mid), #4a1218);
   color: var(--ivory);
 }
 
@@ -1599,7 +1599,7 @@ fieldset {
   padding: 4rem 1.25rem 2.4rem;
   text-align: center;
   color: var(--ivory);
-  background: #2c2118;
+  background: #4a1218;
 }
 
 .footer-seal {

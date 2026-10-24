@@ -429,7 +429,8 @@
   function formHtml(data) {
     const accept = data.attendance === "accept" ? "checked" : "";
     const decline = data.attendance === "decline" ? "checked" : "";
-    const guests = data.guests || 1;
+    const plusYes = String(data.guests) === "2" ? "checked" : "";
+    const plusNo = String(data.guests) === "1" ? "checked" : "";
     return `<form class="form${accept ? " is-accepting" : ""}" id="rsvp-form" novalidate>
       <h3 class="card-title">Your reply</h3>
       <div class="form-row">
@@ -459,28 +460,20 @@
         <p class="field-error" id="attendance-error"></p>
       </fieldset>
       <div class="only-accepting" id="accepting-fields">
-        <div class="field">
-          <span class="field-label" id="guests-label">How many in your party, including you?</span>
-          <div class="stepper">
-            <button type="button" data-action="step" data-step="-1" aria-label="Fewer guests">−</button>
-            <output id="guest-count" for="guests-input">${esc(guests)}</output>
-            <button type="button" data-action="step" data-step="1" aria-label="More guests">+</button>
-          </div>
-          <input type="hidden" name="guests" id="guests-input" value="${esc(guests)}" />
-        </div>
-        <div class="field">
-          <label class="field-label" for="guest-names">Names for the place cards</label>
-          <input id="guest-names" name="guestNames" value="${esc(data.guestNames || "")}" />
-        </div>
         <fieldset>
-          <legend class="field-legend">A plate for you</legend>
-          ${mealFields(data.meal)}
-          <p class="field-error" id="meal-error"></p>
+          <legend class="field-legend">A plus one?</legend>
+          <div class="choice-grid">
+            <label class="choice">
+              <input type="radio" name="plusOne" value="no" ${plusNo} />
+              <span><strong>Just me</strong></span>
+            </label>
+            <label class="choice">
+              <input type="radio" name="plusOne" value="yes" ${plusYes} />
+              <span><strong>I'll bring someone</strong></span>
+            </label>
+          </div>
+          <p class="field-error" id="plus-error"></p>
         </fieldset>
-        <div class="field">
-          <label class="field-label" for="song">A song for the dance floor</label>
-          <input id="song" name="song" value="${esc(data.song || "")}" />
-        </div>
       </div>
       <div class="field">
         <label class="field-label" for="note">A note for the couple</label>
@@ -502,8 +495,9 @@
 
   function partyLine(guests) {
     const count = Number(guests);
-    if (!count) return "";
-    return count === 1 ? "1 guest" : `${count} guests`;
+    if (count === 2) return "You and a plus one";
+    if (count === 1) return "Just you";
+    return "";
   }
 
   function googleFormUrl(url) {
@@ -584,10 +578,7 @@
     const sent = Boolean(data.sentToForm);
     const rows = [
       summaryRow("Reply", coming ? "Joyfully attending" : "Unable to attend"),
-      coming ? summaryRow("Party", partyLine(data.guests)) : "",
-      coming ? summaryRow("Place cards", data.guestNames) : "",
-      coming ? summaryRow("Plate", mealLabel(data.meal)) : "",
-      coming ? summaryRow("Song", data.song) : "",
+      coming ? summaryRow("Headcount", partyLine(data.guests)) : "",
       summaryRow("Note", data.note),
     ].join("");
     const kept = sent
@@ -730,12 +721,7 @@
       `Email: ${data.email}`,
       `Reply: ${coming ? "Joyfully attending" : "Unable to attend"}`,
     ];
-    if (coming) {
-      lines.push(`Party: ${partyLine(data.guests)}`);
-      if (data.guestNames) lines.push(`Place cards: ${data.guestNames}`);
-      if (data.meal) lines.push(`Plate: ${mealLabel(data.meal)}`);
-      if (data.song) lines.push(`Song: ${data.song}`);
-    }
+    if (coming) lines.push(`Headcount: ${data.guests}`);
     if (data.note) lines.push(`Note: ${data.note}`);
     return lines.join("\n");
   }
@@ -896,9 +882,8 @@
     data.name = String(data.name || "").trim();
     data.email = String(data.email || "").trim();
     data.note = String(data.note || "").trim();
-    data.song = String(data.song || "").trim();
-    data.guestNames = String(data.guestNames || "").trim();
-    data.guests = String(data.guests || "1");
+    data.plusOne = data.plusOne === "yes" || data.plusOne === "no" ? data.plusOne : "";
+    data.guests = data.plusOne === "yes" ? "2" : data.plusOne === "no" ? "1" : "";
     return data;
   }
 
@@ -919,20 +904,15 @@
       setError(null, "attendance-error", "Please tell us if you can come.");
       invalid = invalid || $("input[name='attendance']", form);
     }
-    if (data.attendance === "accept" && !data.meal) {
-      setError(null, "meal-error", "Please choose a plate.");
-      invalid = invalid || $("input[name='meal']", form);
+    if (data.attendance === "accept" && data.plusOne !== "yes" && data.plusOne !== "no") {
+      setError(null, "plus-error", "Please tell us if you are bringing someone.");
+      invalid = invalid || $("input[name='plusOne']", form);
     }
     if (invalid) {
       invalid.focus();
       return;
     }
-    if (data.attendance !== "accept") {
-      data.guests = "";
-      data.guestNames = "";
-      data.meal = "";
-      data.song = "";
-    }
+    if (data.attendance !== "accept") data.guests = "";
     data.sentToForm = submitGoogleForm(data);
     saveReply(data);
     showSuccess(data);

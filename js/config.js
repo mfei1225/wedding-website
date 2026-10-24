@@ -190,11 +190,11 @@ window.WEDDING = {
     items: [
       {
         q: "When should I reply?",
-        a: "By May 1, 2027, so there is time to plan the tables and the meal.",
+        a: "By May 1, 2027, so we know how many people to expect.",
       },
       {
         q: "May I bring a guest?",
-        a: "The invitation is for the names written on it. If someone is welcome with you, their name is included.",
+        a: "Yes. One guest is welcome with you. This reply is a headcount, so let us know if that seat will be filled.",
       },
       {
         q: "Are children invited?",
@@ -214,14 +214,14 @@ window.WEDDING = {
       },
       {
         q: "What if I have a dietary need?",
-        a: "Tell us on the reply card. We will pass it to the kitchen.",
+        a: "This reply is a headcount. The invitation will ask about the meal.",
       },
     ],
   },
 
   rsvp: {
     title: "Kindly Reply",
-    lead: "Tell us if you can be there. It makes the tables kinder and the kitchen calmer.",
+    lead: "A save-the-date, so we can count the seats. Tell us if you can come, and if you will bring one guest.",
     deadline: "Kindly reply by May 1, 2027",
     accept: "Joyfully accept",
     decline: "Unable to attend",
@@ -230,27 +230,15 @@ window.WEDDING = {
       { id: "salmon", label: "Salmon", note: "A light garden sauce" },
       { id: "garden", label: "Garden plate", note: "The best of early summer" },
     ],
-    maxGuests: 8,
-    /* Replies are saved in Google Forms once action and the entry numbers are filled in.
-       1. Make a form with eight short-answer questions, in this order:
-          Name, Email, Reply, Party size, Place cards, Plate, Song, Note.
-          Leave them optional. A required blank answer is dropped by Google.
-       2. In the form, open the three-dot menu and choose Get pre-filled link.
-       3. Type a word in every question, then copy the link it gives you.
-       4. That link contains entry.123456789 eight times. Paste each number below, in the same order.
-       5. The form's share link ends in /viewform. Change that word to formResponse and paste it as action.
-       Answers show up under Responses, and in the sheet linked from there. */
+    maxGuests: 2,
     googleForm: {
-      action: "",
+      action: "https://docs.google.com/forms/d/e/1FAIpQLSfVpe2g3VbD2KkgmBKXpZhKIAFDX3BUBGvm9FDJrDA4kW2TVg/formResponse",
       entries: {
-        name: "",
-        email: "",
-        attendance: "",
-        guests: "",
-        guestNames: "",
-        meal: "",
-        song: "",
-        note: "",
+        name: "entry.1574716153",
+        email: "entry.10813964",
+        attendance: "entry.1291766891",
+        guests: "entry.1373692889",
+        note: "entry.444604167",
       },
     },
   },
