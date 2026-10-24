@@ -93,6 +93,12 @@
     return `https://maps.google.com/?q=${encodeURIComponent(fullAddress())}`;
   }
 
+  function mapEmbed() {
+    const query = fullAddress();
+    if (!query) return "";
+    return `https://maps.google.com/maps?q=${encodeURIComponent(query)}&hl=en&z=15&output=embed`;
+  }
+
   function navLinks(className) {
     return w.nav
       .map(
@@ -152,7 +158,7 @@
           <a class="btn btn-line" href="#rsvp">Kindly reply</a>
         </div>
         <button class="text-btn" type="button" data-action="add-calendar">Add to calendar</button>
-        <a class="scroll-cue" href="#invitation"><span>The day</span><span class="scroll-line" aria-hidden="true"></span></a>
+        <a class="scroll-cue" href="#invitation"><span>Details</span><span class="scroll-line" aria-hidden="true"></span></a>
       </div>
       ${cloud()}
     </section>`;
@@ -170,6 +176,40 @@
     const lines = [e.venue, e.street, [e.city, e.region].filter(Boolean).join(", ")].filter(Boolean);
     if (!lines.length) return "The place will follow with the invitation.";
     return lines.map((line) => esc(line)).join("<br />");
+  }
+
+  function recipientName() {
+    const raw = new URLSearchParams(window.location.search).get("recipient");
+    return String(raw || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 80);
+  }
+
+  function renderIntro() {
+    if (reduce) return "";
+    const guest = recipientName();
+    const to = guest || "Friends & family";
+    return `<div class="intro" id="intro">
+      <button class="intro-open" type="button" id="intro-open">
+        <span class="intro-stage">
+          <span class="intro-envelope">
+            <span class="intro-face intro-front">
+              <span class="intro-seal" aria-hidden="true">S</span>
+              <span class="intro-address">
+                <span class="intro-to">To: ${esc(to)}</span>
+                <span>From: ${esc(couple())}</span>
+              </span>
+            </span>
+            <span class="intro-face intro-back">
+              <span class="intro-v" aria-hidden="true"></span>
+              <span class="intro-back-note">${esc(w.hero.english)}</span>
+            </span>
+          </span>
+        </span>
+        <span class="intro-prompt">Tap to open</span>
+      </button>
+    </div>`;
   }
 
   function renderInvitation() {
@@ -283,9 +323,13 @@
       )
       .join("");
     const address = fullAddress();
+    const heading = e.venue || e.city || "Place to follow";
     const addressHtml = address
-      ? `<p>${[e.street, [e.city, e.region].filter(Boolean).join(", ")].filter(Boolean).map((line) => esc(line)).join("<br />")}</p>`
+      ? `<p>${esc(fullAddress())}</p>`
       : `<p>The address will be added here.</p>`;
+    const map = address
+      ? `<iframe class="venue-map" title="Map of ${esc(fullAddress())}" src="${esc(mapEmbed())}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`
+      : "";
     const actions = address
       ? `<div class="btn-row">
           <a class="btn btn-lacquer" href="${mapHref()}" target="_blank" rel="noopener">Directions</a>
@@ -298,10 +342,10 @@
         ${sectionHead(w.travel.chinese, w.travel.title, w.travel.lead)}
         <div class="travel-grid${hotels ? "" : " is-single"}">
           <article class="venue-panel reveal${address ? "" : " no-map"}">
-            ${address ? `<div class="map-art" aria-hidden="true"><span class="pin"></span></div>` : ""}
+            ${map}
             <div class="venue-copy">
               <span class="hotel-kicker">The gathering</span>
-              <h3>${esc(e.venue || "Place to follow")}</h3>
+              <h3>${esc(heading)}</h3>
               ${addressHtml}
               <p>${esc(w.travel.blurb)}</p>
               ${actions}
@@ -613,7 +657,7 @@
   function renderFooter() {
     const e = w.event;
     const place = [e.city].filter(Boolean).join("");
-    const fine = [e.venue, e.street, e.city].filter(Boolean).join(" · ");
+    const fine = [e.venue, e.street, [e.city, e.region].filter(Boolean).join(", ")].filter(Boolean).join(" · ");
     return `<footer class="site-footer">
       <p class="footer-names">${esc(couple())}</p>
       <p class="footer-date">${esc(e.dateLine)}${place ? ` · ${esc(place)}` : ""}</p>
@@ -639,18 +683,19 @@
   function render() {
     const existing = loadReply();
     $("#app").innerHTML = [
+      renderIntro(),
       renderHeader(),
       `<main>`,
       renderHero(),
       renderInvitation(),
+      renderRsvp(existing),
       // renderStory(),
-      renderSchedule(),
+      // renderSchedule(),
       renderTravel(),
       // renderRegistry(),
-      renderParty(),
+      // renderParty(),
       renderGallery(),
       renderFaq(),
-      renderRsvp(existing),
       `</main>`,
       renderFooter(),
       renderLightbox(),
@@ -805,6 +850,36 @@
     if (main) main.inert = open;
     if (footer) footer.inert = open;
     if (!open && restore) btn.focus();
+  }
+
+  let introTimer = 0;
+
+  function closeIntro(immediate) {
+    const intro = $("#intro");
+    if (!intro || intro.classList.contains("is-done")) return;
+    window.clearTimeout(introTimer);
+    if (immediate) {
+      intro.classList.add("is-done");
+      intro.hidden = true;
+      return;
+    }
+    if (intro.classList.contains("is-opening")) return;
+    intro.classList.add("is-opening");
+    window.setTimeout(() => {
+      intro.classList.add("is-done");
+      window.setTimeout(() => {
+        intro.hidden = true;
+      }, 900);
+    }, 2200);
+  }
+
+  function bindIntro() {
+    const intro = $("#intro");
+    const open = $("#intro-open");
+    if (!intro || !open) return;
+    open.addEventListener("click", () => closeIntro(false));
+    introTimer = window.setTimeout(() => closeIntro(false), 4500);
+    $(".skip")?.addEventListener("click", () => closeIntro(true));
   }
 
   function onScroll() {
@@ -1024,6 +1099,7 @@
     window.addEventListener("resize", () => {
       if (desktopNav.matches) toggleNav(false);
     });
+    bindIntro();
   }
 
   render();

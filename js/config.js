@@ -16,10 +16,10 @@ window.WEDDING = {
     dateLong: "Saturday, the fifth of June",
     yearLong: "Two thousand twenty-seven",
     timeLong: "in the afternoon",
-    city: "",
-    region: "",
+    city: "Pleasanton",
+    region: "CA 94566",
     venue: "",
-    street: "",
+    street: "3400 W Ruby Hill Drive",
     hashtag: "#SarahAndMichael",
     allDay: true,
     icsStart: "20270605",
@@ -48,8 +48,8 @@ window.WEDDING = {
 
   where: {
     label: "Where",
-    title: "To follow",
-    note: "The place will be shared soon",
+    title: "Pleasanton",
+    note: "3400 W Ruby Hill Drive",
   },
 
   attire: {
@@ -105,19 +105,19 @@ window.WEDDING = {
 
   travel: {
     title: "Travel & Stay",
-    lead: "Maps and rooms will live here once the place is set.",
-    blurb: "Sarah and Michael will share where to gather, where to sleep, and how to get there.",
+    lead: "The celebration is in Pleasanton. Rooms will be shared closer to the day.",
+    blurb: "Use the map for directions. Where to stay will be added here.",
     hotels: [],
     facts: [
       {
         label: "The day",
         title: "June 5",
-        note: "A Saturday in early summer. Hold the date, and we will fill in the rest.",
+        note: "A Saturday in early summer, in Pleasanton.",
       },
       {
         label: "Getting there",
-        title: "Soon",
-        note: "Directions will be added with the invitation.",
+        title: "Pleasanton",
+        note: "3400 W Ruby Hill Drive, Pleasanton, CA 94566.",
       },
       {
         label: "What to pack",
@@ -206,7 +206,7 @@ window.WEDDING = {
       },
       {
         q: "Where is the wedding, and where should I stay?",
-        a: "The place is still being finished. Travel, rooms, and a map will be added here, and again on the invitation.",
+        a: "3400 W Ruby Hill Drive, Pleasanton, CA 94566. Rooms will be added here closer to the day, and again on the invitation.",
       },
       {
         q: "May I take photographs during the ceremony?",
@@ -249,7 +249,7 @@ window.WEDDING = {
 
   nav: [
     // { href: "#story", label: "Story" },
-    { href: "#schedule", label: "The day" },
+    // { href: "#schedule", label: "The day" },
     { href: "#travel", label: "Stay" },
     // { href: "#registry", label: "Gifts" },
     { href: "#gallery", label: "Photos" },
