@@ -1024,6 +1024,15 @@ body:has(#intro:not(.is-done)) {
   margin-top: 1rem;
 }
 
+.invite-eve {
+  margin-top: 0.85rem;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.2rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
 .invite-blessing {
   margin-top: 1.3rem;
   font-family: var(--song);

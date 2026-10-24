@@ -233,6 +233,7 @@
           </h2>
           <p class="invite-request">${esc(invite.requestLead)}<br />${esc(invite.requestTail)}</p>
           <p class="invite-when">${esc(e.dateLong)}<br />${esc(e.yearLong)}<br />${esc(e.timeLong)}</p>
+          ${e.eveNote ? `<p class="invite-eve">${esc(e.eveNote)}</p>` : ""}
           <p class="invite-where">${placeLines()}</p>
           ${blessing}
           <p class="invite-follow">${esc(invite.follow)}</p>

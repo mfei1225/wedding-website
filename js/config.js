@@ -16,6 +16,7 @@ window.WEDDING = {
     dateLong: "Saturday, the fifth of June",
     yearLong: "Two thousand twenty-seven",
     timeLong: "in the afternoon",
+    eveNote: "There may be festivities the day before, on Friday, June 4.",
     city: "Pleasanton",
     region: "CA 94566",
     venue: "",
@@ -43,7 +44,7 @@ window.WEDDING = {
   when: {
     label: "When",
     title: "Saturday, June 5",
-    note: "In the afternoon",
+    note: "In the afternoon. Friday may hold festivities too.",
   },
 
   where: {
@@ -85,6 +86,17 @@ window.WEDDING = {
     lead: "Saturday, June 5. The hour-by-hour will be set closer to the date.",
     days: [
       {
+        title: "Friday",
+        date: "June 4",
+        events: [
+          {
+            time: "To follow",
+            title: "Festivities",
+            note: "There may be a gathering the day before the wedding. The plan will be shared when it is set.",
+          },
+        ],
+      },
+      {
         title: "Saturday",
         date: "June 5",
         events: [
@@ -112,7 +124,7 @@ window.WEDDING = {
       {
         label: "The day",
         title: "June 5",
-        note: "A Saturday in early summer, in Pleasanton.",
+        note: "Saturday, June 5, in Pleasanton. There may also be festivities on Friday, June 4.",
       },
       {
         label: "Getting there",
@@ -188,6 +200,10 @@ window.WEDDING = {
     title: "Questions",
     lead: "Practical things, answered as far as we know them.",
     items: [
+      {
+        q: "Is there anything the day before?",
+        a: "There may be. Friday, June 4, might include festivities as well as the wedding on Saturday, June 5. We will share the plan when it is set.",
+      },
       {
         q: "When should I reply?",
         a: "By May 1, 2027, so we know how many people to expect.",
