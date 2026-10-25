@@ -521,6 +521,14 @@
         </fieldset>
       </div>
       <div class="field">
+        <label class="field-label" for="guest-address">Mailing address</label>
+        <div class="address-combo">
+          <input id="guest-address" name="address" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="address-suggestions" placeholder="Start typing the street address" value="${esc(data.address || "")}" />
+          <ul class="address-suggestions" id="address-suggestions" role="listbox" hidden></ul>
+        </div>
+        <p class="field-error" id="address-error"></p>
+      </div>
+      <div class="field">
         <label class="field-label" for="note">A note for the couple</label>
         <textarea id="note" name="note">${esc(data.note || "")}</textarea>
       </div>
@@ -576,6 +584,7 @@
       email: data.email,
       attendance: coming ? w.rsvp.accept : w.rsvp.decline,
       guests: coming ? String(data.guests || "") : "",
+      address: data.address,
       guestNames: coming ? data.guestNames : "",
       meal: coming ? mealLabel(data.meal) : "",
       song: coming ? data.song : "",
@@ -624,6 +633,7 @@
     const rows = [
       summaryRow("Reply", coming ? "Joyfully attending" : "Unable to attend"),
       coming ? summaryRow("Headcount", partyLine(data.guests)) : "",
+      summaryRow("Mailing address", data.address),
       summaryRow("Note", data.note),
     ].join("");
     const kept = sent
@@ -768,6 +778,7 @@
       `Reply: ${coming ? "Joyfully attending" : "Unable to attend"}`,
     ];
     if (coming) lines.push(`Headcount: ${data.guests}`);
+    if (data.address) lines.push(`Mailing address: ${data.address}`);
     if (data.note) lines.push(`Note: ${data.note}`);
     return lines.join("\n");
   }
@@ -953,17 +964,251 @@
     }
   }
 
+  let addressSession = "";
+  let addressTimer = 0;
+  let addressRequest = null;
+  let addressIndex = -1;
+
+  function mapsKey() {
+    const key = String(w.rsvp.googleMapsKey || "").trim();
+    return /^AIza[\w-]{20,}$/.test(key) ? key : "";
+  }
+
+  function looksLikeMailingAddress(value) {
+    const text = String(value || "").trim();
+    const hasZip = /\b\d{5}(?:-\d{4})?\b/.test(text);
+    const hasStreetNumber = /\d/.test(text);
+    const hasPlaceName = /[A-Za-z]{2,}/.test(text);
+    return text.length >= 10 && hasZip && hasStreetNumber && hasPlaceName;
+  }
+
+  function hideAddressSuggestions() {
+    const list = document.getElementById("address-suggestions");
+    const input = document.getElementById("guest-address");
+    if (list) {
+      list.hidden = true;
+      list.innerHTML = "";
+    }
+    if (input) input.setAttribute("aria-expanded", "false");
+    addressIndex = -1;
+  }
+
+  function chooseAddress(value) {
+    const input = document.getElementById("guest-address");
+    if (!input || !value) return;
+    input.value = value;
+    const error = document.getElementById("address-error");
+    if (error) error.textContent = "";
+    input.removeAttribute("aria-invalid");
+    hideAddressSuggestions();
+    input.focus();
+  }
+
+  function markAddressOption(buttons) {
+    buttons.forEach((button, index) => {
+      const active = index === addressIndex;
+      button.classList.toggle("is-active", active);
+      if (active) button.setAttribute("aria-selected", "true");
+      else button.removeAttribute("aria-selected");
+    });
+  }
+
+  function handleAddressKeys(event) {
+    const list = document.getElementById("address-suggestions");
+    const buttons = list && !list.hidden ? [...list.querySelectorAll("[data-action='address-pick']")] : [];
+    if (!buttons.length) return false;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      addressIndex = Math.min(buttons.length - 1, addressIndex + 1);
+      markAddressOption(buttons);
+      return true;
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      addressIndex = Math.max(0, addressIndex - 1);
+      markAddressOption(buttons);
+      return true;
+    }
+    if (event.key === "Enter" && addressIndex >= 0) {
+      event.preventDefault();
+      chooseAddress(buttons[addressIndex].dataset.address || "");
+      return true;
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      hideAddressSuggestions();
+      return true;
+    }
+    return false;
+  }
+
+  function showAddressSuggestions(input, items) {
+    const list = document.getElementById("address-suggestions");
+    if (!list) return;
+    if (!items.length) {
+      hideAddressSuggestions();
+      return;
+    }
+    addressIndex = -1;
+    const options = items
+      .map(
+        (item) =>
+          `<li role="option"><button type="button" data-action="address-pick" data-address="${esc(item)}">${esc(item)}</button></li>`
+      )
+      .join("");
+    list.innerHTML = `${options}<li class="address-credit"><img src="https://maps.gstatic.com/mapfiles/api-3/images/powered-by-google-on-white3.png" alt="Powered by Google" width="120" height="14" /></li>`;
+    list.hidden = false;
+    input.setAttribute("aria-expanded", "true");
+  }
+
+  async function fetchAddressSuggestions(input, query) {
+    const key = mapsKey();
+    if (!key) return;
+    if (!addressSession) addressSession = crypto.randomUUID();
+    addressRequest?.abort();
+    const controller = new AbortController();
+    addressRequest = controller;
+    try {
+      const response = await fetch("https://places.googleapis.com/v1/places:autocomplete", {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": key,
+          "X-Goog-FieldMask": "suggestions.placePrediction.text.text",
+        },
+        body: JSON.stringify({
+          input: query,
+          includedRegionCodes: ["us"],
+          includedPrimaryTypes: ["street_address", "premise", "subpremise"],
+          languageCode: "en",
+          regionCode: "us",
+          sessionToken: addressSession,
+        }),
+      });
+      if (input.value.trim() !== query) return;
+      if (!response.ok) {
+        hideAddressSuggestions();
+        return;
+      }
+      const payload = await response.json();
+      const items = (payload.suggestions || [])
+        .map((item) => String(item.placePrediction?.text?.text || "").replace(/, USA$/i, ""))
+        .filter(Boolean);
+      showAddressSuggestions(input, items);
+    } catch (error) {
+      if (error.name !== "AbortError") hideAddressSuggestions();
+    }
+  }
+
+  function onAddressInput(input) {
+    window.clearTimeout(addressTimer);
+    const query = input.value.trim();
+    if (!mapsKey() || query.length < 3) {
+      hideAddressSuggestions();
+      return;
+    }
+    addressTimer = window.setTimeout(() => fetchAddressSuggestions(input, query), 250);
+  }
+
+  function postalLine(result, fallback) {
+    const standard = result?.uspsData?.standardizedAddress;
+    if (standard?.firstAddressLine && standard?.cityStateZipAddressLine) {
+      return [standard.firstAddressLine, standard.secondAddressLine, standard.cityStateZipAddressLine]
+        .filter(Boolean)
+        .join(", ");
+    }
+    const postal = result?.address?.postalAddress;
+    if (postal?.addressLines?.length) {
+      const cityLine = [postal.locality, postal.administrativeArea, postal.postalCode].filter(Boolean).join(" ");
+      return [...postal.addressLines, cityLine].filter(Boolean).join(", ");
+    }
+    return String(result?.address?.formattedAddress || fallback || "").replace(/, USA$/i, "");
+  }
+
+  function interpretUsps(result) {
+    const dpv = String(result?.uspsData?.dpvConfirmation || "");
+    const line = postalLine(result);
+    if (dpv === "Y" && line) return { ok: true, address: line };
+    if (dpv === "D" || result?.verdict?.possibleNextAction === "CONFIRM_ADD_SUBPREMISES") {
+      return { ok: false, message: "Please add the apartment or unit number." };
+    }
+    if (dpv === "S") return { ok: false, message: "That apartment or unit number doesn't match this building." };
+    return {
+      ok: false,
+      message: "The post office doesn't recognize that address. Please choose one from the list.",
+    };
+  }
+
+  function postalAddress(value) {
+    const text = String(value || "").trim().replace(/,\s*USA$/i, "");
+    const parts = text.split(",").map((part) => part.trim()).filter(Boolean);
+    const address = { regionCode: "US", addressLines: parts.length ? [text] : [""] };
+    if (!parts.length) return address;
+    const tail = parts[parts.length - 1].match(/^(?:(.+?)\s+)?([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/);
+    if (!tail) return address;
+    address.administrativeArea = tail[2].toUpperCase();
+    address.postalCode = tail[3];
+    const cityInTail = (tail[1] || "").trim();
+    if (cityInTail) {
+      address.locality = cityInTail;
+      address.addressLines = parts.slice(0, -1);
+    } else if (parts.length >= 3) {
+      address.locality = parts[parts.length - 2];
+      address.addressLines = parts.slice(0, -2);
+    }
+    if (!address.addressLines.length) address.addressLines = [text];
+    return address;
+  }
+
+  async function confirmMailingAddress(address) {
+    const key = mapsKey();
+    if (!key) {
+      return looksLikeMailingAddress(address)
+        ? { ok: true, address }
+        : { ok: false, message: "Please include a street, city, and ZIP code." };
+    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 8000);
+    try {
+      const response = await fetch(
+        `https://addressvalidation.googleapis.com/v1:validateAddress?key=${encodeURIComponent(key)}`,
+        {
+          method: "POST",
+          signal: controller.signal,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            address: postalAddress(address),
+            enableUspsCass: true,
+            sessionToken: addressSession || crypto.randomUUID(),
+          }),
+        }
+      );
+      addressSession = "";
+      if (!response.ok) {
+        return { ok: false, message: "We couldn't check that address. Please try again in a moment." };
+      }
+      const payload = await response.json();
+      return interpretUsps(payload.result);
+    } catch {
+      return { ok: false, message: "We couldn't check that address. Please try again in a moment." };
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }
+
   function readForm(form) {
     const data = Object.fromEntries(new FormData(form).entries());
     data.name = String(data.name || "").trim();
     data.email = String(data.email || "").trim();
     data.note = String(data.note || "").trim();
+    data.address = String(data.address || "").trim();
     data.plusOne = data.plusOne === "yes" || data.plusOne === "no" ? data.plusOne : "";
     data.guests = data.plusOne === "yes" ? "2" : data.plusOne === "no" ? "1" : "";
     return data;
   }
 
-  function submitForm(form) {
+  async function submitForm(form) {
     clearErrors(form);
     const data = readForm(form);
     let invalid = null;
@@ -984,9 +1229,35 @@
       setError(null, "plus-error", "Please tell us if you are bringing someone.");
       invalid = invalid || $("input[name='plusOne']", form);
     }
+    if (data.attendance === "accept" && !data.address) {
+      setError($("#guest-address", form), "address-error", "Please add the address for the invitation.");
+      invalid = invalid || $("#guest-address", form);
+    }
     if (invalid) {
       invalid.focus();
       return;
+    }
+    if (data.attendance === "accept") {
+      const button = form.querySelector("[type='submit']");
+      const label = button?.textContent || "Send reply";
+      if (button && mapsKey()) {
+        button.disabled = true;
+        button.textContent = "Checking address…";
+      }
+      const checked = await confirmMailingAddress(data.address);
+      if (!form.isConnected) return;
+      if (button) {
+        button.disabled = false;
+        button.textContent = label;
+      }
+      if (!checked.ok) {
+        setError($("#guest-address", form), "address-error", checked.message);
+        $("#guest-address", form)?.focus();
+        return;
+      }
+      data.address = checked.address || data.address;
+      const addressInput = $("#guest-address", form);
+      if (addressInput) addressInput.value = data.address;
     }
     if (data.attendance !== "accept") data.guests = "";
     data.sentToForm = submitGoogleForm(data);
@@ -1052,6 +1323,7 @@
           if (item) item.classList.toggle("is-open", open);
           if (answer) answer.hidden = !open;
         }
+        if (action === "address-pick") chooseAddress(trigger.dataset.address || "");
         if (action === "gallery-open") openGallery(Number(trigger.dataset.index));
         if (action === "lightbox-close") $("#lightbox")?.close();
         if (action === "lightbox-prev") stepGallery(-1);
@@ -1067,6 +1339,20 @@
       }
     });
 
+    document.addEventListener("input", (event) => {
+      if (event.target.id === "guest-address") onAddressInput(event.target);
+    });
+
+    document.addEventListener("pointerdown", (event) => {
+      const pick = event.target.closest("[data-action='address-pick']");
+      if (pick) {
+        event.preventDefault();
+        chooseAddress(pick.dataset.address || "");
+        return;
+      }
+      if (!event.target.closest(".address-combo")) hideAddressSuggestions();
+    });
+
     document.addEventListener("submit", (event) => {
       const form = event.target.closest("#rsvp-form");
       if (!form) return;
@@ -1075,6 +1361,7 @@
     });
 
     document.addEventListener("keydown", (event) => {
+      if (event.target?.id === "guest-address" && handleAddressKeys(event)) return;
       const dialog = $("#lightbox");
       if (dialog?.open) {
         if (event.key === "ArrowRight") stepGallery(1);

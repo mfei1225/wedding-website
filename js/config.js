@@ -247,6 +247,8 @@ window.WEDDING = {
       { id: "garden", label: "Garden plate", note: "The best of early summer" },
     ],
     maxGuests: 2,
+    // Referrer-restricted Google key. Turns on address suggestions and postal delivery checks.
+    googleMapsKey: "AIzaSyBLY6bgbm3BOPT7_0Y5nLiEUwFjATQ3cjo",
     googleForm: {
       action: "https://docs.google.com/forms/d/e/1FAIpQLSfVpe2g3VbD2KkgmBKXpZhKIAFDX3BUBGvm9FDJrDA4kW2TVg/formResponse",
       entries: {
@@ -254,6 +256,7 @@ window.WEDDING = {
         email: "entry.10813964",
         attendance: "entry.1291766891",
         guests: "entry.1373692889",
+        address: "entry.1215103816",
         note: "entry.444604167",
       },
     },

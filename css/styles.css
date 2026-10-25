@@ -1593,6 +1593,52 @@ body:has(#intro:not(.is-done)) {
   display: none;
 }
 
+.address-combo {
+  position: relative;
+}
+
+.address-suggestions {
+  position: absolute;
+  z-index: 4;
+  top: calc(100% + 0.35rem);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0.35rem 0 0.2rem;
+  list-style: none;
+  background: var(--paper);
+  border: 1px solid rgba(138, 42, 50, 0.18);
+  box-shadow: var(--shadow);
+}
+
+.address-suggestions[hidden] {
+  display: none;
+}
+
+.address-suggestions button {
+  display: block;
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  text-align: left;
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+.address-suggestions button.is-active,
+.address-suggestions button:hover {
+  background: rgba(138, 42, 50, 0.08);
+}
+
+.address-credit {
+  padding: 0.35rem 0.85rem 0.45rem;
+}
+
+.address-credit img {
+  width: 120px;
+  height: 14px;
+}
+
 fieldset {
   margin: 1.15rem 0 0;
   padding: 0;
