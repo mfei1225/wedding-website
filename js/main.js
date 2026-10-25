@@ -523,7 +523,7 @@
       <div class="field">
         <label class="field-label" for="guest-address">Mailing address</label>
         <div class="address-combo">
-          <input id="guest-address" name="address" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="address-suggestions" placeholder="Start typing the street address" value="${esc(data.address || "")}" />
+          <input id="guest-address" name="address" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="address-suggestions" placeholder="Street, city, state, ZIP" value="${esc(data.address || "")}" />
           <ul class="address-suggestions" id="address-suggestions" role="listbox" hidden></ul>
         </div>
         <p class="field-error" id="address-error"></p>
@@ -993,15 +993,25 @@
     addressIndex = -1;
   }
 
-  function chooseAddress(value) {
+  function hasZip(value) {
+    return /\b\d{5}(?:-\d{4})?\b/.test(String(value || ""));
+  }
+
+  async function chooseAddress(value) {
     const input = document.getElementById("guest-address");
     if (!input || !value) return;
+    hideAddressSuggestions();
     input.value = value;
     const error = document.getElementById("address-error");
     if (error) error.textContent = "";
     input.removeAttribute("aria-invalid");
-    hideAddressSuggestions();
-    input.focus();
+    const checked = await confirmMailingAddress(value);
+    if (!input.isConnected || input.value.trim() !== value.trim()) return;
+    if (checked.ok && hasZip(checked.address)) {
+      input.value = checked.address;
+      return;
+    }
+    setError(input, "address-error", checked.ok ? "Please include a ZIP code." : checked.message);
   }
 
   function markAddressOption(buttons) {
@@ -1122,7 +1132,8 @@
         return { ok: false, message: "We couldn't check that address. Please try again in a moment." };
       }
       const payload = await response.json();
-      if (payload.ok && payload.address) return { ok: true, address: payload.address };
+      if (payload.ok && hasZip(payload.address)) return { ok: true, address: payload.address };
+      if (payload.ok) return { ok: false, message: "Please include a ZIP code." };
       return {
         ok: false,
         message: payload.message || "The post office doesn't recognize that address. Please choose one from the list.",
