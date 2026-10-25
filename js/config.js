@@ -247,7 +247,7 @@ window.WEDDING = {
       { id: "garden", label: "Garden plate", note: "The best of early summer" },
     ],
     maxGuests: 2,
-    googleMapsKey: "",
+    addressProxy: "https://gcoomnnwmbehpkmbgroi.supabase.co/functions/v1/wedding-address",
     googleForm: {
       action: "https://docs.google.com/forms/d/e/1FAIpQLSfVpe2g3VbD2KkgmBKXpZhKIAFDX3BUBGvm9FDJrDA4kW2TVg/formResponse",
       entries: {

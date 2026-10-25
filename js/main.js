@@ -969,9 +969,9 @@
   let addressRequest = null;
   let addressIndex = -1;
 
-  function mapsKey() {
-    const key = String(w.rsvp.googleMapsKey || "").trim();
-    return /^AIza[\w-]{20,}$/.test(key) ? key : "";
+  function addressProxy() {
+    const url = String(w.rsvp.addressProxy || "").trim();
+    return /^https:\/\/[a-z0-9.-]+\.supabase\.co\/functions\/v1\/[a-z0-9-]+$/i.test(url) ? url : "";
   }
 
   function looksLikeMailingAddress(value) {
@@ -1062,29 +1062,18 @@
   }
 
   async function fetchAddressSuggestions(input, query) {
-    const key = mapsKey();
-    if (!key) return;
+    const proxy = addressProxy();
+    if (!proxy) return;
     if (!addressSession) addressSession = crypto.randomUUID();
     addressRequest?.abort();
     const controller = new AbortController();
     addressRequest = controller;
     try {
-      const response = await fetch("https://places.googleapis.com/v1/places:autocomplete", {
+      const response = await fetch(proxy, {
         method: "POST",
         signal: controller.signal,
-        headers: {
-          "Content-Type": "application/json",
-          "X-Goog-Api-Key": key,
-          "X-Goog-FieldMask": "suggestions.placePrediction.text.text",
-        },
-        body: JSON.stringify({
-          input: query,
-          includedRegionCodes: ["us"],
-          includedPrimaryTypes: ["street_address", "premise", "subpremise"],
-          languageCode: "en",
-          regionCode: "us",
-          sessionToken: addressSession,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "suggest", input: query, sessionToken: addressSession }),
       });
       if (input.value.trim() !== query) return;
       if (!response.ok) {
@@ -1092,10 +1081,7 @@
         return;
       }
       const payload = await response.json();
-      const items = (payload.suggestions || [])
-        .map((item) => String(item.placePrediction?.text?.text || "").replace(/, USA$/i, ""))
-        .filter(Boolean);
-      showAddressSuggestions(input, items);
+      showAddressSuggestions(input, (payload.suggestions || []).filter(Boolean));
     } catch (error) {
       if (error.name !== "AbortError") hideAddressSuggestions();
     }
@@ -1104,66 +1090,16 @@
   function onAddressInput(input) {
     window.clearTimeout(addressTimer);
     const query = input.value.trim();
-    if (!mapsKey() || query.length < 3) {
+    if (!addressProxy() || query.length < 3) {
       hideAddressSuggestions();
       return;
     }
     addressTimer = window.setTimeout(() => fetchAddressSuggestions(input, query), 250);
   }
 
-  function postalLine(result, fallback) {
-    const standard = result?.uspsData?.standardizedAddress;
-    if (standard?.firstAddressLine && standard?.cityStateZipAddressLine) {
-      return [standard.firstAddressLine, standard.secondAddressLine, standard.cityStateZipAddressLine]
-        .filter(Boolean)
-        .join(", ");
-    }
-    const postal = result?.address?.postalAddress;
-    if (postal?.addressLines?.length) {
-      const cityLine = [postal.locality, postal.administrativeArea, postal.postalCode].filter(Boolean).join(" ");
-      return [...postal.addressLines, cityLine].filter(Boolean).join(", ");
-    }
-    return String(result?.address?.formattedAddress || fallback || "").replace(/, USA$/i, "");
-  }
-
-  function interpretUsps(result) {
-    const dpv = String(result?.uspsData?.dpvConfirmation || "");
-    const line = postalLine(result);
-    if (dpv === "Y" && line) return { ok: true, address: line };
-    if (dpv === "D" || result?.verdict?.possibleNextAction === "CONFIRM_ADD_SUBPREMISES") {
-      return { ok: false, message: "Please add the apartment or unit number." };
-    }
-    if (dpv === "S") return { ok: false, message: "That apartment or unit number doesn't match this building." };
-    return {
-      ok: false,
-      message: "The post office doesn't recognize that address. Please choose one from the list.",
-    };
-  }
-
-  function postalAddress(value) {
-    const text = String(value || "").trim().replace(/,\s*USA$/i, "");
-    const parts = text.split(",").map((part) => part.trim()).filter(Boolean);
-    const address = { regionCode: "US", addressLines: parts.length ? [text] : [""] };
-    if (!parts.length) return address;
-    const tail = parts[parts.length - 1].match(/^(?:(.+?)\s+)?([A-Za-z]{2})\s+(\d{5}(?:-\d{4})?)$/);
-    if (!tail) return address;
-    address.administrativeArea = tail[2].toUpperCase();
-    address.postalCode = tail[3];
-    const cityInTail = (tail[1] || "").trim();
-    if (cityInTail) {
-      address.locality = cityInTail;
-      address.addressLines = parts.slice(0, -1);
-    } else if (parts.length >= 3) {
-      address.locality = parts[parts.length - 2];
-      address.addressLines = parts.slice(0, -2);
-    }
-    if (!address.addressLines.length) address.addressLines = [text];
-    return address;
-  }
-
   async function confirmMailingAddress(address) {
-    const key = mapsKey();
-    if (!key) {
+    const proxy = addressProxy();
+    if (!proxy) {
       return looksLikeMailingAddress(address)
         ? { ok: true, address }
         : { ok: false, message: "Please include a street, city, and ZIP code." };
@@ -1171,25 +1107,26 @@
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 8000);
     try {
-      const response = await fetch(
-        `https://addressvalidation.googleapis.com/v1:validateAddress?key=${encodeURIComponent(key)}`,
-        {
-          method: "POST",
-          signal: controller.signal,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            address: postalAddress(address),
-            enableUspsCass: true,
-            sessionToken: addressSession || crypto.randomUUID(),
-          }),
-        }
-      );
+      const response = await fetch(proxy, {
+        method: "POST",
+        signal: controller.signal,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "validate",
+          address,
+          sessionToken: addressSession || crypto.randomUUID(),
+        }),
+      });
       addressSession = "";
       if (!response.ok) {
         return { ok: false, message: "We couldn't check that address. Please try again in a moment." };
       }
       const payload = await response.json();
-      return interpretUsps(payload.result);
+      if (payload.ok && payload.address) return { ok: true, address: payload.address };
+      return {
+        ok: false,
+        message: payload.message || "The post office doesn't recognize that address. Please choose one from the list.",
+      };
     } catch {
       return { ok: false, message: "We couldn't check that address. Please try again in a moment." };
     } finally {
@@ -1240,7 +1177,7 @@
     if (data.attendance === "accept") {
       const button = form.querySelector("[type='submit']");
       const label = button?.textContent || "Send reply";
-      if (button && mapsKey()) {
+      if (button && addressProxy()) {
         button.disabled = true;
         button.textContent = "Checking address…";
       }
