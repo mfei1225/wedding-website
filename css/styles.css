@@ -1712,11 +1712,11 @@ fieldset {
   outline-offset: 3px;
 }
 
-.only-accepting {
+.only-paper {
   display: none;
 }
 
-.form.is-accepting .only-accepting {
+.form.is-paper .only-paper {
   display: block;
 }
 

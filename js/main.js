@@ -238,11 +238,6 @@
           ${blessing}
           <p class="invite-follow">${esc(invite.follow)}</p>
         </article>
-        <ul class="fact-grid">
-          <li class="fact reveal"><span>${esc(w.when.label)}</span><strong>${esc(w.when.title)}</strong><em>${esc(w.when.note)}</em></li>
-          <li class="fact reveal"><span>${esc(w.where.label)}</span><strong>${esc(w.where.title)}</strong><em>${esc(w.where.note)}</em></li>
-          <li class="fact reveal"><span>${esc(w.attire.label)}</span><strong>${esc(w.attire.title)}</strong><em>${esc(w.attire.note)}</em></li>
-        </ul>
         <div class="btn-row center">
           <button class="btn btn-lacquer" type="button" data-action="add-calendar">Add to calendar</button>
           ${directions}
@@ -474,9 +469,9 @@
   function formHtml(data) {
     const accept = data.attendance === "accept" ? "checked" : "";
     const decline = data.attendance === "decline" ? "checked" : "";
-    const plusYes = String(data.guests) === "2" ? "checked" : "";
-    const plusNo = String(data.guests) === "1" ? "checked" : "";
-    return `<form class="form${accept ? " is-accepting" : ""}" id="rsvp-form" novalidate>
+    const paper = data.invite === "paper" ? "checked" : "";
+    const virtual = data.invite === "virtual" ? "checked" : "";
+    return `<form class="form${paper ? " is-paper" : ""}" id="rsvp-form" novalidate>
       <h3 class="card-title">Your reply</h3>
       <div class="form-row">
         <div class="field">
@@ -504,29 +499,29 @@
         </div>
         <p class="field-error" id="attendance-error"></p>
       </fieldset>
-      <div class="only-accepting" id="accepting-fields">
-        <fieldset>
-          <legend class="field-legend">A plus one?</legend>
-          <div class="choice-grid">
-            <label class="choice">
-              <input type="radio" name="plusOne" value="no" ${plusNo} />
-              <span><strong>Just me</strong></span>
-            </label>
-            <label class="choice">
-              <input type="radio" name="plusOne" value="yes" ${plusYes} />
-              <span><strong>I'll bring someone</strong></span>
-            </label>
-          </div>
-          <p class="field-error" id="plus-error"></p>
-        </fieldset>
-      </div>
-      <div class="field">
-        <label class="field-label" for="guest-address">Mailing address</label>
-        <div class="address-combo">
-          <input id="guest-address" name="address" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="address-suggestions" placeholder="Street, city, state, ZIP" value="${esc(data.address || "")}" />
-          <ul class="address-suggestions" id="address-suggestions" role="listbox" hidden></ul>
+      <fieldset>
+        <legend class="field-legend">The invitation</legend>
+        <div class="choice-grid">
+          <label class="choice">
+            <input type="radio" name="invite" value="paper" ${paper} />
+            <span><strong>Paper</strong></span>
+          </label>
+          <label class="choice">
+            <input type="radio" name="invite" value="virtual" ${virtual} />
+            <span><strong>Virtual</strong></span>
+          </label>
         </div>
-        <p class="field-error" id="address-error"></p>
+        <p class="field-error" id="invite-error"></p>
+      </fieldset>
+      <div class="only-paper">
+        <div class="field">
+          <label class="field-label" for="guest-address">Mailing address</label>
+          <div class="address-combo">
+            <input id="guest-address" name="address" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="address-suggestions" placeholder="Street, city, state, ZIP" value="${esc(data.address || "")}" />
+            <ul class="address-suggestions" id="address-suggestions" role="listbox" hidden></ul>
+          </div>
+          <p class="field-error" id="address-error"></p>
+        </div>
       </div>
       <div class="field">
         <label class="field-label" for="note">A note for the couple</label>
@@ -546,10 +541,9 @@
     return meal ? meal.label : "";
   }
 
-  function partyLine(guests) {
-    const count = Number(guests);
-    if (count === 2) return "You and a plus one";
-    if (count === 1) return "Just you";
+  function inviteLabel(value) {
+    if (value === "paper") return "Paper invitation";
+    if (value === "virtual") return "Virtual invitation";
     return "";
   }
 
@@ -583,11 +577,8 @@
       name: data.name,
       email: data.email,
       attendance: coming ? w.rsvp.accept : w.rsvp.decline,
-      guests: coming ? String(data.guests || "") : "",
-      address: data.address,
-      guestNames: coming ? data.guestNames : "",
-      meal: coming ? mealLabel(data.meal) : "",
-      song: coming ? data.song : "",
+      address: data.invite === "paper" ? data.address : "",
+      invite: data.invite === "paper" ? "Paper" : data.invite === "virtual" ? "Virtual" : "",
       note: data.note,
     };
   }
@@ -632,8 +623,8 @@
     const sent = Boolean(data.sentToForm);
     const rows = [
       summaryRow("Reply", coming ? "Joyfully attending" : "Unable to attend"),
-      coming ? summaryRow("Headcount", partyLine(data.guests)) : "",
-      summaryRow("Mailing address", data.address),
+      summaryRow("Invitation", inviteLabel(data.invite)),
+      data.invite === "paper" ? summaryRow("Mailing address", data.address) : "",
       summaryRow("Note", data.note),
     ].join("");
     const kept = sent
@@ -656,7 +647,6 @@
       <div class="wrap rsvp-layout">
         <div class="rsvp-intro">
           ${sectionHead(w.rsvp.chinese, w.rsvp.title, w.rsvp.lead)}
-          <p class="deadline">${esc(w.rsvp.deadline)}</p>
         </div>
         <div class="reply-card" id="rsvp-panel">
           ${existing ? successHtml(existing) : formHtml({})}
@@ -705,8 +695,8 @@
       renderTravel(),
       // renderRegistry(),
       // renderParty(),
-      renderGallery(),
-      renderFaq(),
+      // renderGallery(),
+      // renderFaq(),
       `</main>`,
       renderFooter(),
       renderLightbox(),
@@ -777,8 +767,8 @@
       `Email: ${data.email}`,
       `Reply: ${coming ? "Joyfully attending" : "Unable to attend"}`,
     ];
-    if (coming) lines.push(`Headcount: ${data.guests}`);
-    if (data.address) lines.push(`Mailing address: ${data.address}`);
+    if (data.invite) lines.push(`Invitation: ${inviteLabel(data.invite)}`);
+    if (data.invite === "paper" && data.address) lines.push(`Mailing address: ${data.address}`);
     if (data.note) lines.push(`Note: ${data.note}`);
     return lines.join("\n");
   }
@@ -1151,8 +1141,7 @@
     data.email = String(data.email || "").trim();
     data.note = String(data.note || "").trim();
     data.address = String(data.address || "").trim();
-    data.plusOne = data.plusOne === "yes" || data.plusOne === "no" ? data.plusOne : "";
-    data.guests = data.plusOne === "yes" ? "2" : data.plusOne === "no" ? "1" : "";
+    data.invite = data.invite === "paper" || data.invite === "virtual" ? data.invite : "";
     return data;
   }
 
@@ -1173,11 +1162,11 @@
       setError(null, "attendance-error", "Please tell us if you can come.");
       invalid = invalid || $("input[name='attendance']", form);
     }
-    if (data.attendance === "accept" && data.plusOne !== "yes" && data.plusOne !== "no") {
-      setError(null, "plus-error", "Please tell us if you are bringing someone.");
-      invalid = invalid || $("input[name='plusOne']", form);
+    if (data.invite !== "paper" && data.invite !== "virtual") {
+      setError(null, "invite-error", "Please choose a paper or virtual invitation.");
+      invalid = invalid || $("input[name='invite']", form);
     }
-    if (data.attendance === "accept" && !data.address) {
+    if (data.invite === "paper" && !data.address) {
       setError($("#guest-address", form), "address-error", "Please add the address for the invitation.");
       invalid = invalid || $("#guest-address", form);
     }
@@ -1185,7 +1174,7 @@
       invalid.focus();
       return;
     }
-    if (data.attendance === "accept") {
+    if (data.invite === "paper") {
       const button = form.querySelector("[type='submit']");
       const label = button?.textContent || "Send reply";
       if (button && addressProxy()) {
@@ -1207,7 +1196,7 @@
       const addressInput = $("#guest-address", form);
       if (addressInput) addressInput.value = data.address;
     }
-    if (data.attendance !== "accept") data.guests = "";
+    if (data.invite !== "paper") data.address = "";
     data.sentToForm = submitGoogleForm(data);
     saveReply(data);
     showSuccess(data);
@@ -1281,9 +1270,9 @@
     });
 
     document.addEventListener("change", (event) => {
-      if (event.target.name === "attendance") {
+      if (event.target.name === "invite") {
         const form = event.target.closest("form");
-        if (form) form.classList.toggle("is-accepting", event.target.value === "accept" && event.target.checked);
+        if (form) form.classList.toggle("is-paper", event.target.value === "paper" && event.target.checked);
       }
     });
 

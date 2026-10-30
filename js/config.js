@@ -13,8 +13,8 @@ window.WEDDING = {
     iso: "2027-06-05T15:00:00",
     weekday: "Saturday",
     dateLine: "June 5, 2027",
-    dateLong: "Saturday, the fifth of June",
-    yearLong: "Two thousand twenty-seven",
+    dateLong: "Saturday, June 5",
+    yearLong: "2027",
     timeLong: "in the afternoon",
     eveNote: "There may be festivities the day before, on Friday, June 4.",
     city: "Pleasanton",
@@ -37,7 +37,7 @@ window.WEDDING = {
   invitation: {
     requestLead: "request the pleasure of your company",
     requestTail: "at the celebration of their marriage",
-    follow: "A formal invitation will follow.",
+    follow: "This is separate from the formal invitation, which will follow.",
     blessing: "",
   },
 
@@ -210,7 +210,7 @@ window.WEDDING = {
       },
       {
         q: "May I bring a guest?",
-        a: "Yes. One guest is welcome with you. This reply is a headcount, so let us know if that seat will be filled.",
+        a: "Write it in your note and we will answer.",
       },
       {
         q: "Are children invited?",
@@ -237,7 +237,7 @@ window.WEDDING = {
 
   rsvp: {
     title: "Kindly Reply",
-    lead: "A save-the-date, so we can count the seats. Tell us if you can come, and if you will bring one guest.",
+    lead: "This reply is separate from the formal invitation. Tell us if you can come, and whether you would like a paper invitation or a virtual one.",
     deadline: "Kindly reply by May 1, 2027",
     accept: "Joyfully accept",
     decline: "Unable to attend",
@@ -255,6 +255,7 @@ window.WEDDING = {
         email: "entry.10813964",
         attendance: "entry.1291766891",
         guests: "entry.1373692889",
+        invite: "entry.1843752768",
         address: "entry.1215103816",
         note: "entry.444604167",
       },
@@ -270,7 +271,7 @@ window.WEDDING = {
     // { href: "#schedule", label: "The day" },
     { href: "#travel", label: "Stay" },
     // { href: "#registry", label: "Gifts" },
-    { href: "#gallery", label: "Photos" },
-    { href: "#faq", label: "Questions" },
+    // { href: "#gallery", label: "Photos" },
+    // { href: "#faq", label: "Questions" },
   ],
 };
