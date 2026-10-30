@@ -309,15 +309,6 @@
         </article>`;
       })
       .join("");
-    const facts = w.travel.facts
-      .map(
-        (fact) => `<article class="reveal">
-          <span class="info-label">${esc(fact.label)}</span>
-          <h3>${esc(fact.title)}</h3>
-          <p>${esc(fact.note)}</p>
-        </article>`
-      )
-      .join("");
     const address = fullAddress();
     const heading = e.venue || e.city || "Place to follow";
     const addressHtml = address
@@ -349,7 +340,6 @@
           </article>
           ${hotelColumn}
         </div>
-        <div class="info-row">${facts}</div>
       </div>
     </section>`;
   }
